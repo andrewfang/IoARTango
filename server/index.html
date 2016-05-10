@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+	<head>
+		<script src="https://cdn.firebase.com/js/client/2.4.2/firebase.js"></script>
+		<script src='https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js'></script>
+	</head>
+	<body>
+		<input type='text' id='noteText' placeholder='Text'>
+    	<input type='number' id='xVal' placeholder='X'>
+    	<input type='number' id='yVal' placeholder='Y'>
+    	<input type='number' id='zVal' placeholder='Z'>
+    	<div id='imagesAdded'> </div>
+		<script>
+			var myDataRef = new Firebase('https://luminous-heat-8591.firebaseio.com/');
+			$('#zVal').keypress(function (e) {
+		        if (e.keyCode == 13) {
+
+		       		var noteText = $('#noteText').val();
+		       		var xVal = $('#xVal').val();
+		       		var yVal = $('#yVal').val();
+		       		var zVal = $('#zVal').val();
+
+		        	myDataRef.push({noteText: noteText, x: xVal, y: yVal, z: zVal});
+
+		        	$('#noteText').val('');
+		        	$('#xVal').val('');
+		        	$('#yVal').val('');
+		        	$('#zVal').val('');
+		        }
+		     });
+
+			myDataRef.on('child_added', function(snapshot) {
+		        var message = snapshot.val();
+		        displayValuesAdded(message.noteText, message.xVal, message.yVal, message.zVal);
+		    });
+
+		    function displayValuesAdded(noteText, xVal, yVal, zVal) {
+		    	// $('<div/>').text(text).prepend($('<em/>').text(name+': ')).appendTo($('#imagesAdded'));
+		     //    $('#messagesDiv')[0].scrollTop = $('#messagesDiv')[0].scrollHeight;
+		    };
+
+		</script>
+	</body>
+</html>
