@@ -32,6 +32,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import org.rajawali3d.scene.ASceneFrameCallback;
@@ -358,4 +359,28 @@ public class PlaneFittingActivity extends Activity implements View.OnTouchListen
 
         return planeFitPose;
     }
+
+    public void yellowButtonClicked(View view) {
+        ImageView noteCardView = (ImageView)findViewById(R.id.noteCardView);
+        noteCardView.setBackgroundResource(R.drawable.yellow_background);
+    }
+
+    public void blueButtonClicked(View view) {
+        ImageView noteCardView = (ImageView)findViewById(R.id.noteCardView);
+        noteCardView.setBackgroundResource(R.drawable.blue_background);
+    }
+
+    public void greenButtonClicked(View view) {
+        ImageView noteCardView = (ImageView)findViewById(R.id.noteCardView);
+        noteCardView.setBackgroundResource(R.drawable.green_background);
+    }
+
+    public void redButtonClicked(View view) {
+        ImageView noteCardView = (ImageView)findViewById(R.id.noteCardView);
+        noteCardView.setBackgroundResource(R.drawable.red_background);
+    }
+
+
+    // Button elements
+
 }
