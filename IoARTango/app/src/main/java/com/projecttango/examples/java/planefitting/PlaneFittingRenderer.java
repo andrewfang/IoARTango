@@ -20,6 +20,7 @@ import com.google.atap.tangoservice.TangoPoseData;
 
 import android.content.Context;
 
+import android.os.Build;
 import android.util.Log;
 import android.view.MotionEvent;
 
@@ -42,6 +43,8 @@ import com.projecttango.rajawali.DeviceExtrinsics;
 import com.projecttango.rajawali.Pose;
 import com.projecttango.rajawali.ScenePoseCalculator;
 
+import java.util.ArrayList;
+
 /**
  * Very simple example augmented reality renderer which displays a cube fixed in place.
  * The position of the cube in the OpenGL world is updated using the {@code updateObjectPose}
@@ -49,14 +52,15 @@ import com.projecttango.rajawali.ScenePoseCalculator;
  */
 public class PlaneFittingRenderer extends RajawaliRenderer {
     private static final float CUBE_SIDE_LENGTH = 0.5f;
+    private static final int MAX_ITEMS = 30;
     private static final String TAG = PlaneFittingRenderer.class.getSimpleName();
 
     // Augmented Reality related fields
     private ATexture mTangoCameraTexture;
     private boolean mSceneCameraConfigured;
 
-    private Object3D mObject;
-    private Pose mObjectPose;
+    private ArrayList<Object3D> mObjects;
+    private ArrayList<Pose> mObjectPoses;
     private boolean mObjectPoseUpdated = false;
 
     public PlaneFittingRenderer(Context context) {
@@ -89,12 +93,41 @@ public class PlaneFittingRenderer extends RajawaliRenderer {
         light.setPosition(3, 2, 4);
         getCurrentScene().addLight(light);
 
+        mObjects = new ArrayList<Object3D>();
+        mObjectPoses = new ArrayList<Pose>();
+
+        // Magic - For some reason, we need to add all the items
+        for (int i = 0; i < MAX_ITEMS; i++) {
+            addStartingObjects();
+        }
+    }
+
+    private void addStartingObjects() {
+        Material material = new Material();
+        material.setColor(0xff009900);
+        try {
+            material.addTexture(new Texture("instructions", R.drawable.clear));
+        } catch (ATexture.TextureException e) {
+            e.printStackTrace();
+        }
+        material.setColorInfluence(0.1f);
+        material.enableLighting(true);
+        material.setDiffuseMethod(new DiffuseMethod.Lambert());
+
+        // Build a Cube and place it initially in the origin.
+        Object3D newObject = new Cube(0.1f);
+        newObject.setMaterial(material);
+        newObject.setPosition(0, 0, -3);
+        newObject.setRotation(Vector3.Axis.Z, 180);
+        getCurrentScene().addChild(newObject);
+    }
+
+    private void addObject(Texture t) {
         // Set-up a material: green with application of the light and
         // instructions.
         Material material = new Material();
         material.setColor(0xff009900);
         try {
-            Texture t = new Texture("instructions", R.drawable.instructions);
             material.addTexture(t);
         } catch (ATexture.TextureException e) {
             e.printStackTrace();
@@ -104,11 +137,12 @@ public class PlaneFittingRenderer extends RajawaliRenderer {
         material.setDiffuseMethod(new DiffuseMethod.Lambert());
 
         // Build a Cube and place it initially in the origin.
-        mObject = new Cube(CUBE_SIDE_LENGTH);
-        mObject.setMaterial(material);
-        mObject.setPosition(0, 0, -3);
-        mObject.setRotation(Vector3.Axis.Z, 180);
-        getCurrentScene().addChild(mObject);
+        Object3D newObject = new Cube(CUBE_SIDE_LENGTH);
+        newObject.setMaterial(material);
+        newObject.setPosition(0, 0, -3);
+        newObject.setRotation(Vector3.Axis.Z, 180);
+        getCurrentScene().addChild(newObject);
+        this.mObjects.add(newObject);
     }
 
     @Override
@@ -116,13 +150,10 @@ public class PlaneFittingRenderer extends RajawaliRenderer {
         // Update the AR object if necessary
         // Synchronize against concurrent access with the setter below.
         synchronized (this) {
-            if (mObjectPoseUpdated) {
-                // Place the 3D object in the location of the detected plane.
-                mObject.setPosition(mObjectPose.getPosition());
-                mObject.setOrientation(mObjectPose.getOrientation());
-                // Move it forward by half of the size of the cube to make it
-                // flush with the plane surface.
-                mObject.moveForward(CUBE_SIDE_LENGTH / 2.0f);
+            if (mObjectPoseUpdated && mObjects.size() > 0) {
+                mObjects.get(mObjects.size() -1).setPosition(mObjectPoses.get(mObjects.size() -1).getPosition());
+                mObjects.get(mObjects.size() -1).setOrientation(mObjectPoses.get(mObjects.size() -1).getOrientation());
+                mObjects.get(mObjects.size() -1).moveForward(CUBE_SIDE_LENGTH / 2.0f);
                 mObjectPoseUpdated = false;
             }
         }
@@ -134,8 +165,10 @@ public class PlaneFittingRenderer extends RajawaliRenderer {
      * Save the updated plane fit pose to update the AR object on the next render pass.
      * This is synchronized against concurrent access in the render loop above.
      */
-    public synchronized void updateObjectPose(TangoPoseData planeFitPose) {
-        mObjectPose = ScenePoseCalculator.toOpenGLPose(planeFitPose);
+    public synchronized void updateObjectPose(TangoPoseData planeFitPose, Texture t) {
+        mObjectPoses.add(ScenePoseCalculator.toOpenGLPose(planeFitPose));
+        this.addObject(t);
+
         mObjectPoseUpdated = true;
     }
 

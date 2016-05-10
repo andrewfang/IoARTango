@@ -28,23 +28,36 @@ import com.google.atap.tangoservice.TangoPoseData;
 import com.google.atap.tangoservice.TangoXyzIjData;
 
 import android.app.Activity;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.EditText;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import org.rajawali3d.materials.textures.Texture;
 import org.rajawali3d.scene.ASceneFrameCallback;
 import org.rajawali3d.surface.RajawaliSurfaceView;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Handler;
 
 import com.projecttango.rajawali.DeviceExtrinsics;
 import com.projecttango.rajawali.ScenePoseCalculator;
 import com.projecttango.tangosupport.TangoPointCloudManager;
 import com.projecttango.tangosupport.TangoSupport;
 import com.projecttango.tangosupport.TangoSupport.IntersectionPointPlaneModelPair;
+
+import static android.widget.RelativeLayout.ALIGN_TOP;
 
 /**
  * An example showing how to use the Tango APIs to create an augmented reality application
@@ -79,6 +92,7 @@ public class PlaneFittingActivity extends Activity implements View.OnTouchListen
     private Tango mTango;
     private boolean mIsConnected = false;
     private double mCameraPoseTimestamp = 0;
+    private EditText mEditText;
 
     // Texture rendering related fields
     // NOTE: Naming indicates which thread is in charge of updating this variable
@@ -93,13 +107,27 @@ public class PlaneFittingActivity extends Activity implements View.OnTouchListen
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         mSurfaceView = new RajawaliSurfaceView(this);
         mRenderer = new PlaneFittingRenderer(this);
         mSurfaceView.setSurfaceRenderer(mRenderer);
         mSurfaceView.setOnTouchListener(this);
         mTango = new Tango(this);
         mPointCloudManager = new TangoPointCloudManager();
-        setContentView(mSurfaceView);
+
+        RelativeLayout rl = new RelativeLayout(this);
+        RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+//        mEditText = new EditText(this);
+//        mEditText.setText("Hello there", TextView.BufferType.EDITABLE);
+//        lp.addRule(ALIGN_TOP);
+//        mEditText.setLayoutParams(lp);
+
+
+        rl.addView(mSurfaceView);
+//        rl.addView(mEditText);
+
+        setContentView(rl);
+
     }
 
     @Override
@@ -297,7 +325,7 @@ public class PlaneFittingActivity extends Activity implements View.OnTouchListen
                 // Fit a plane on the clicked point using the latest poiont cloud data
                 // Synchronize against concurrent access to the RGB timestamp in the OpenGL thread
                 // and a possible service disconnection due to an onPause event.
-                TangoPoseData planeFitPose;
+                final TangoPoseData planeFitPose;
                 synchronized (this) {
                     planeFitPose = doFitPlane(u, v, mRgbTimestampGlThread);
                 }
@@ -305,7 +333,14 @@ public class PlaneFittingActivity extends Activity implements View.OnTouchListen
                 if (planeFitPose != null) {
                     // Update the position of the rendered cube to the pose of the detected plane
                     // This update is made thread safe by the renderer
-                    mRenderer.updateObjectPose(planeFitPose);
+                    // Get a handler that can be used to post to the main thread
+
+//                    mEditText.setCursorVisible(false);
+//                    mEditText.buildDrawingCache();
+//                    Bitmap bmp = Bitmap.createBitmap(mEditText.getDrawingCache());
+//                    Texture t = new Texture("instructions", bmp);
+                    Texture t = new Texture("instructions", R.drawable.instructions);
+                    mRenderer.updateObjectPose(planeFitPose, t);
                 }
 
             } catch (TangoException t) {
