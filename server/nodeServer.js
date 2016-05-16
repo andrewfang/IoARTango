@@ -1,6 +1,10 @@
 var express = require('express');
 var firebase = require('firebase');
 var bodyParser = require('body-parser');
+var fs = require('fs');
+
+
+// Writes asynchronously
 
 // Creates the app for express
 var app = express();
@@ -12,24 +16,11 @@ app.use(bodyParser.json());
 var myDataRef = new Firebase('https://luminous-heat-8591.firebaseio.com/');
 
 // Server responding to GET request
-// TODO: MODIFY URL??
 app.get('/', function (req,res) {
-	// Fetch data
-	var xValTarget = req.body.xVal;
-	var yValTarget = req.body.yVal;
-	var zValTarget = req.body.zVal;
-
-
-	// Performs this function once
-	myDataRef.once("value", function(snapshot) {
-		// TODO: CREATE INBOUNDS FUNCTIOn
-		snapshot.forEach(function(data) {
-			if (inBounds(xValTarget, yValTarget, zValTarget, data)) {
-				// TODO: PERFORM DESIRED ACTION HERE
-			};
-		});
+	myDataRef.once("value", function(snap) {
+		console.log("All data: ", snap.val());
 	});
-
+	res.sendFile(__dirname+ '/index.html');
 });
 
 
@@ -37,15 +28,7 @@ app.get('/', function (req,res) {
 // TODO: MODIFY URL??
 app.post('/', function (req,res) {
 
-	// Parsing the data from the request (TODO: NEED TO USE REAL JSON ATTRIBUTES)
-	// TODO: NEED TO FIND A WAY TO ENCODE IMAGE INTO BASE-64 INT
-	var noteText = req.body.noteText;
-	var xVal = req.body.xVal;
-	var yVal = req.body.yVal;
-	var zVal = req.body.zVal;
-
 	// Storing data into database
-	myDataRef.push({noteText:noteText, xVal:xVal, yVal:yVal, zVal:zVal});
 
 
     var body = '';
@@ -54,12 +37,26 @@ app.post('/', function (req,res) {
     req.on('data', function (data) {
         body += data;
         console.log("Partial body: " + body);
+        
+
+        // Parsing the data from the request (TODO: NEED TO USE REAL JSON ATTRIBUTES)
+        
+        // TODO: UNCOMMENT THIS AFTER WE GET ACTUAL IMPLEMENTATION WORKING!
+        myDataRef.push({requestText:body});
+
+        // var x = req.body.x;
+        // var y = req.body.y;
+        // var z = req.body.z;
+        // var image = req.body.image;
+
+        // TODO: UNCOMMENT: myDataRef.push({image:image, x:x, y:y, z:z});
+
     });
 
-    // Event listener for after end of data reached (process data here)
+    // Event listener for after end of data reached (perform actions to be done after data is processed here)
     req.on('end', function () {
         console.log("Body: " + body);
-        writeAsync(body);
+
     });
 
     // Writing to the response and sending it
