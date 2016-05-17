@@ -16,7 +16,7 @@ app.use(bodyParser.json());
 var myDataRef = new Firebase('https://luminous-heat-8591.firebaseio.com/');
 
 // Server responding to GET request
-app.get('/', function (req,res) {
+app.get('/notes', function (req,res) {
 	myDataRef.once("value", function(snap) {
 		console.log("All data: ", snap.val());
 	});
@@ -25,11 +25,11 @@ app.get('/', function (req,res) {
 
 
 // Server responding to POST request
-// TODO: MODIFY URL??
-app.post('/', function (req,res) {
+app.post('/notes', function (req,res) {
 
 	// Storing data into database
 
+    console.log("POST RECEIVED!!!")
 
     var body = '';
     // Event listener for starting to read data (save data here)
@@ -41,15 +41,16 @@ app.post('/', function (req,res) {
 
         // Parsing the data from the request (TODO: NEED TO USE REAL JSON ATTRIBUTES)
         
-        // TODO: UNCOMMENT THIS AFTER WE GET ACTUAL IMPLEMENTATION WORKING!
+        // TODO: COMMENT THIS AFTER WE GET ACTUAL IMPLEMENTATION WORKING!
         myDataRef.push({requestText:body});
 
+        // TODO: UNCOMMENT THESE NEXT 5 LINES AFTER ACTUAL IMPLEMENTATION IS WOKRING
         // var x = req.body.x;
         // var y = req.body.y;
         // var z = req.body.z;
         // var image = req.body.image;
 
-        // TODO: UNCOMMENT: myDataRef.push({image:image, x:x, y:y, z:z});
+        // myDataRef.push({image:image, x:x, y:y, z:z});
 
     });
 
