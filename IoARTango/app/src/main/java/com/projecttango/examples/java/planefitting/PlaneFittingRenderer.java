@@ -22,9 +22,14 @@ import android.content.Context;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.util.Base64;
+import android.util.Base64InputStream;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.inputmethod.EditorInfo;
+import android.widget.EditText;
+import android.widget.RelativeLayout;
 
 import org.json.JSONArray;
 import org.rajawali3d.Object3D;
@@ -48,7 +53,11 @@ import com.projecttango.rajawali.ScenePoseCalculator;
 
 import com.loopj.android.http.*;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 /**
@@ -69,7 +78,10 @@ public class PlaneFittingRenderer extends RajawaliRenderer {
     private ArrayList<Vector3> mObjectPoses;
     private boolean mObjectPoseUpdated = false;
 
-    private static final String ENDPOINT = "http://10.34.180.16:3000/notes";
+    EditText theEditText;
+
+    private static final String ENDPOINT = "http://ioartango.herokuapp.com/notes";
+//    private static final String ENDPOINT = "http://10.31.134.45:3000/notes";
 
     public PlaneFittingRenderer(Context context) {
         super(context);
@@ -179,19 +191,18 @@ public class PlaneFittingRenderer extends RajawaliRenderer {
      * Save the updated plane fit pose to update the AR object on the next render pass.
      * This is synchronized against concurrent access in the render loop above.
      */
-    public synchronized void updateObjectPose(TangoPoseData planeFitPose, Bitmap bmp) {
+    public synchronized void updateObjectPose(TangoPoseData planeFitPose, Bitmap bmp, String text) {
 
         Pose p = ScenePoseCalculator.toOpenGLPose(planeFitPose);
         mObjectPoses.add(p.getPosition());
         this.addObject(bmp);
 
-        this.postToServer(p, bmp);
+        this.postToServer(p, text);
         mObjectPoseUpdated = true;
     }
 
-    void postToServer(Pose p, Bitmap bmp) {
+    void postToServer(Pose p, String text) {
         // encode image
-        String encodedImage = bitmapToString(bmp);
 
         AsyncHttpClient client = new AsyncHttpClient();
 
@@ -199,8 +210,7 @@ public class PlaneFittingRenderer extends RajawaliRenderer {
         params.put("x", p.getPosition().x);
         params.put("y", p.getPosition().y);
         params.put("z", p.getPosition().z);
-        params.put("image", encodedImage);
-        Log.d("ANDREW", encodedImage);
+        params.put("image", text);
 
 //        Bitmap b = stringToBitmap(encodedImage);
         Log.d("ANDREW", "ok");
@@ -285,7 +295,7 @@ public class PlaneFittingRenderer extends RajawaliRenderer {
                 Double z = response.getJSONObject(i).getDouble("z");
 
                 mObjectPoses.add(new Vector3(x, y, z));
-                Bitmap b = stringToBitmap(image);
+                Bitmap b = createBitmapFromText(image);
                 addObject(b);
                 mObjectPoseUpdated = true;
             }
@@ -297,6 +307,8 @@ public class PlaneFittingRenderer extends RajawaliRenderer {
             e.printStackTrace();
             Log.d("ANDREW", "something happened: " + e.getLocalizedMessage() + ":" +  ":" + e.getMessage());
         }
+
+        theEditText.setText("");
 
     }
 
@@ -358,16 +370,13 @@ public class PlaneFittingRenderer extends RajawaliRenderer {
 
     }
 
-    public String bitmapToString(Bitmap in){
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        in.compress(Bitmap.CompressFormat.PNG, 100, bytes);
-        return Base64.encodeToString(bytes.toByteArray(),Base64.NO_PADDING);
-    }
-    public Bitmap stringToBitmap(String in){
-        Log.w("stringToBitmap", in);
-        byte[] decodedString = Base64.decode(in.substring(0, in.length() - 2), Base64.NO_PADDING);
-        Bitmap b = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-
+    public Bitmap createBitmapFromText(String text) {
+        theEditText.setText(text);
+        theEditText.invalidate();
+        theEditText.setDrawingCacheEnabled(true);
+        theEditText.setCursorVisible(false);
+        theEditText.buildDrawingCache();
+        Bitmap b =  Bitmap.createBitmap(theEditText.getDrawingCache());
         return b;
     }
 }

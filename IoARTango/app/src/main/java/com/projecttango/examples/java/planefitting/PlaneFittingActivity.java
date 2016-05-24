@@ -160,6 +160,8 @@ public class PlaneFittingActivity extends Activity implements View.OnTouchListen
         mEditText.setBackgroundColor(Color.YELLOW);
         mEditText.setLayoutParams(editTextLayout);
 
+        mRenderer.theEditText = mEditText;
+
         final int[] colors = new int[] {Color.YELLOW, Color.RED, Color.GREEN, Color.BLUE, Color.WHITE, Color.LTGRAY};
 
         Button b = new Button(this);
@@ -391,29 +393,8 @@ public class PlaneFittingActivity extends Activity implements View.OnTouchListen
                     mEditText.buildDrawingCache();
                     Bitmap bmp = Bitmap.createBitmap(mEditText.getDrawingCache());
 
-//                    Texture t = new Texture("instructions", R.drawable.instructions);
-                    mRenderer.updateObjectPose(planeFitPose, bmp);
+                    mRenderer.updateObjectPose(planeFitPose, bmp, mEditText.getText().toString());
 
-
-//                    RequestQueue queue = Volley.newRequestQueue(this);
-//                    String url ="http://www.google.com";
-//
-//                    // Request a string response from the provided URL.
-//                    StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-//                            new Response.Listener<String>() {
-//                                @Override
-//                                public void onResponse(String response) {
-//                                    // Display the first 500 characters of the response string.
-//                                    Log.d("ANDREW", "Response is: "+ response.substring(0,500));
-//                                }
-//                            }, new Response.ErrorListener() {
-//                        @Override
-//                        public void onErrorResponse(VolleyError error) {
-//                            Log.d("Andrew", "That didn't work!" + error.getLocalizedMessage());
-//                        }
-//                    });
-//                    // Add the request to the RequestQueue.
-//                    queue.add(stringRequest);
                 }
 
             } catch (TangoException t) {
