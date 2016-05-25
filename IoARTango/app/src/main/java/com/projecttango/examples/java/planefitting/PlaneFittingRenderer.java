@@ -42,7 +42,9 @@ import org.rajawali3d.materials.textures.Texture;
 import org.rajawali3d.math.Matrix4;
 import org.rajawali3d.math.vector.Vector3;
 import org.rajawali3d.primitives.Cube;
+import org.rajawali3d.primitives.Plane;
 import org.rajawali3d.primitives.ScreenQuad;
+import org.rajawali3d.primitives.Sphere;
 import org.rajawali3d.renderer.RajawaliRenderer;
 
 import javax.microedition.khronos.opengles.GL10;
@@ -53,11 +55,6 @@ import com.projecttango.rajawali.ScenePoseCalculator;
 
 import com.loopj.android.http.*;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 /**
@@ -66,8 +63,8 @@ import java.util.ArrayList;
  * method.
  */
 public class PlaneFittingRenderer extends RajawaliRenderer {
-    private static final float CUBE_SIDE_LENGTH = 0.5f;
-    private static final int MAX_ITEMS = 30;
+    private static final float CUBE_SIDE_LENGTH = 0.1f;
+    private static final int MAX_ITEMS = 50;
     private static final String TAG = PlaneFittingRenderer.class.getSimpleName();
 
     // Augmented Reality related fields
@@ -81,7 +78,7 @@ public class PlaneFittingRenderer extends RajawaliRenderer {
     EditText theEditText;
 
     private static final String ENDPOINT = "http://ioartango.herokuapp.com/notes";
-//    private static final String ENDPOINT = "http://10.31.134.45:3000/notes";
+//    private static final String ENDPOINT = "http://10.34.189.19:3000/notes";
 
     public PlaneFittingRenderer(Context context) {
         super(context);
@@ -94,7 +91,7 @@ public class PlaneFittingRenderer extends RajawaliRenderer {
         ScreenQuad backgroundQuad = new ScreenQuad();
         Material tangoCameraMaterial = new Material();
         tangoCameraMaterial.setColorInfluence(0);
-        // We need to use Rajawali's {@code StreamingTexture} since it sets up the texture
+        // We need to use Rajawali's {@code StreamingTexture} since it sets up the texture'
         // for GL_TEXTURE_EXTERNAL_OES rendering
         mTangoCameraTexture =
                 new StreamingTexture("camera", (StreamingTexture.ISurfaceListener) null);
@@ -107,11 +104,29 @@ public class PlaneFittingRenderer extends RajawaliRenderer {
         getCurrentScene().addChildAt(backgroundQuad, 0);
 
         // Add a directional light in an arbitrary direction.
-        DirectionalLight light = new DirectionalLight(1, 0.2, -1);
+        DirectionalLight light = new DirectionalLight(1, 1, 1);
         light.setColor(1, 1, 1);
         light.setPower(0.8f);
         light.setPosition(3, 2, 4);
         getCurrentScene().addLight(light);
+
+        DirectionalLight light2 = new DirectionalLight(-1, -1, -1);
+        light.setColor(1, 1, 1);
+        light.setPower(0.8f);
+        light.setPosition(3, 2, 4);
+        getCurrentScene().addLight(light2);
+
+        DirectionalLight light3 = new DirectionalLight(-1, 1, 1);
+        light.setColor(1, 1, 1);
+        light.setPower(0.8f);
+        light.setPosition(3, 2, 4);
+        getCurrentScene().addLight(light3);
+
+        DirectionalLight light4 = new DirectionalLight(-1, -1, 1);
+        light.setColor(1, 1, 1);
+        light.setPower(0.8f);
+        light.setPosition(3, 2, 4);
+        getCurrentScene().addLight(light4);
 
         mObjects = new ArrayList<Object3D>();
         mObjectPoses = new ArrayList<Vector3>();
@@ -120,6 +135,8 @@ public class PlaneFittingRenderer extends RajawaliRenderer {
         for (int i = 0; i < MAX_ITEMS; i++) {
             addStartingObjects();
         }
+
+//        fetchNew();
     }
 
     private void addStartingObjects() {
@@ -135,7 +152,8 @@ public class PlaneFittingRenderer extends RajawaliRenderer {
         material.setDiffuseMethod(new DiffuseMethod.Lambert());
 
         // Build a Cube and place it initially in the origin.
-        Object3D newObject = new Cube(0.1f);
+//        Object3D newObject = new Cube(0.1f);
+        Object3D newObject = new Sphere(CUBE_SIDE_LENGTH, 100, 100);
         newObject.setMaterial(material);
         newObject.setPosition(0, 0, -3);
         newObject.setRotation(Vector3.Axis.Y, 180);
@@ -159,7 +177,8 @@ public class PlaneFittingRenderer extends RajawaliRenderer {
         material.setDiffuseMethod(new DiffuseMethod.Lambert());
 
         // Build a Cube and place it initially in the origin.
-        Object3D newObject = new Cube(CUBE_SIDE_LENGTH);
+//        Object3D newObject = new Cube(CUBE_SIDE_LENGTH);
+        Object3D newObject = new Sphere(CUBE_SIDE_LENGTH, 100, 100);
         newObject.setMaterial(material);
         newObject.setPosition(0, 0, -3);
         newObject.setRotation(Vector3.Axis.Y, 180);
@@ -191,17 +210,17 @@ public class PlaneFittingRenderer extends RajawaliRenderer {
      * Save the updated plane fit pose to update the AR object on the next render pass.
      * This is synchronized against concurrent access in the render loop above.
      */
-    public synchronized void updateObjectPose(TangoPoseData planeFitPose, Bitmap bmp, String text) {
+    public synchronized void updateObjectPose(TangoPoseData planeFitPose, Bitmap bmp, String text, int color) {
 
         Pose p = ScenePoseCalculator.toOpenGLPose(planeFitPose);
         mObjectPoses.add(p.getPosition());
         this.addObject(bmp);
 
-        this.postToServer(p, text);
+        this.postToServer(p, text, color);
         mObjectPoseUpdated = true;
     }
 
-    void postToServer(Pose p, String text) {
+    void postToServer(Pose p, String text, int color) {
         // encode image
 
         AsyncHttpClient client = new AsyncHttpClient();
@@ -210,10 +229,8 @@ public class PlaneFittingRenderer extends RajawaliRenderer {
         params.put("x", p.getPosition().x);
         params.put("y", p.getPosition().y);
         params.put("z", p.getPosition().z);
-        params.put("image", text);
-
-//        Bitmap b = stringToBitmap(encodedImage);
-        Log.d("ANDREW", "ok");
+        params.put("text", text);
+        params.put("color", color);
 
         client.post(ENDPOINT, params, new AsyncHttpResponseHandler() {
 
@@ -225,7 +242,10 @@ public class PlaneFittingRenderer extends RajawaliRenderer {
 
             @Override
             public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
-                Log.d("ANDREW", "post succeeded");
+                Log.d("ANDREW", "post succeeded with code " + statusCode);
+//                Log.d("ANDREW", );
+                Log.d("ANDREWSTRING", new String(responseBody));
+                Log.d("ANDREWHEADER", headers.toString());
                 fetchNew();
             }
 
@@ -289,13 +309,14 @@ public class PlaneFittingRenderer extends RajawaliRenderer {
         Log.d("Andrew", response.length() + "");
         try {
             for (int i = 0; i < response.length(); i++) {
-                String image = response.getJSONObject(i).getString("image");
+                String text = response.getJSONObject(i).getString("text");
+                int color = response.getJSONObject(i).getInt("color");
                 Double x = response.getJSONObject(i).getDouble("x");
                 Double y = response.getJSONObject(i).getDouble("y");
                 Double z = response.getJSONObject(i).getDouble("z");
 
                 mObjectPoses.add(new Vector3(x, y, z));
-                Bitmap b = createBitmapFromText(image);
+                Bitmap b = createBitmapFromText(text, color);
                 addObject(b);
                 mObjectPoseUpdated = true;
             }
@@ -370,12 +391,13 @@ public class PlaneFittingRenderer extends RajawaliRenderer {
 
     }
 
-    public Bitmap createBitmapFromText(String text) {
+    public Bitmap createBitmapFromText(String text, int color) {
         theEditText.setText(text);
         theEditText.invalidate();
         theEditText.setDrawingCacheEnabled(true);
         theEditText.setCursorVisible(false);
         theEditText.buildDrawingCache();
+        theEditText.setBackgroundColor(color);
         Bitmap b =  Bitmap.createBitmap(theEditText.getDrawingCache());
         return b;
     }

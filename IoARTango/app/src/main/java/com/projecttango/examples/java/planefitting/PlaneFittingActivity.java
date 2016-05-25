@@ -121,6 +121,7 @@ public class PlaneFittingActivity extends Activity implements View.OnTouchListen
     private boolean mIsConnected = false;
     private double mCameraPoseTimestamp = 0;
     private EditText mEditText;
+    private int mEditTextBackgroundColor = Color.YELLOW;
 
     // Texture rendering related fields
     // NOTE: Naming indicates which thread is in charge of updating this variable
@@ -171,6 +172,7 @@ public class PlaneFittingActivity extends Activity implements View.OnTouchListen
             public void onClick(View view) {
                 int next = (new Random()).nextInt(colors.length);
                 mEditText.setBackgroundColor(colors[next]);
+                mEditTextBackgroundColor = colors[next];
             }
         });
 
@@ -381,6 +383,9 @@ public class PlaneFittingActivity extends Activity implements View.OnTouchListen
                 synchronized (this) {
                     planeFitPose = doFitPlane(u, v, mRgbTimestampGlThread);
                 }
+                if (mEditText.getText().toString().length() < 1) {
+                    return false;
+                }
 
                 if (planeFitPose != null) {
                     // Update the position of the rendered cube to the pose of the detected plane
@@ -393,7 +398,7 @@ public class PlaneFittingActivity extends Activity implements View.OnTouchListen
                     mEditText.buildDrawingCache();
                     Bitmap bmp = Bitmap.createBitmap(mEditText.getDrawingCache());
 
-                    mRenderer.updateObjectPose(planeFitPose, bmp, mEditText.getText().toString());
+                    mRenderer.updateObjectPose(planeFitPose, bmp, mEditText.getText().toString(), mEditTextBackgroundColor);
 
                 }
 
@@ -447,28 +452,5 @@ public class PlaneFittingActivity extends Activity implements View.OnTouchListen
 
         return planeFitPose;
     }
-
-    public void yellowButtonClicked(View view) {
-        ImageView noteCardView = (ImageView)findViewById(R.id.noteCardView);
-        noteCardView.setImageResource(R.drawable.yellow_background);
-    }
-
-    public void blueButtonClicked(View view) {
-        ImageView noteCardView = (ImageView)findViewById(R.id.noteCardView);
-        noteCardView.setImageResource(R.drawable.blue_background);
-    }
-
-    public void greenButtonClicked(View view) {
-        ImageView noteCardView = (ImageView)findViewById(R.id.noteCardView);
-        noteCardView.setImageResource(R.drawable.green_background);
-    }
-
-    public void redButtonClicked(View view) {
-        ImageView noteCardView = (ImageView)findViewById(R.id.noteCardView);
-        noteCardView.setImageResource(R.drawable.red_background);
-    }
-
-
-    // Button elements
 
 }
